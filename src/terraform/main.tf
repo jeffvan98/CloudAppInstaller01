@@ -1,3 +1,7 @@
+#
+# resource group
+#
+
 data "azurerm_resource_group" "existing" {
   count = var.create_virtual_machine_resource_group ? 0 : 1
   name  = var.virtual_machine_resource_group_name
@@ -5,6 +9,7 @@ data "azurerm_resource_group" "existing" {
 
 resource "azurerm_resource_group" "main" {
   count    = var.create_virtual_machine_resource_group ? 1 : 0
+  
   name     = var.virtual_machine_resource_group_name
   location = var.location
 }
@@ -15,6 +20,10 @@ locals {
         one(data.azurerm_resource_group.existing[*].location),
     )
 }
+
+#
+# virtual network
+#
 
 data "azurerm_virtual_network" "existing" {
   count               = var.create_virtual_machine_network ? 0 : 1
@@ -38,6 +47,10 @@ resource "azurerm_virtual_network" "main" {
   address_space       = var.virtual_machine_network_address_space
 }
 
+#
+# subnet
+#
+
 data "azurerm_subnet" "existing" {
   count                = var.create_virtual_machine_subnet ? 0 : 1
   name                 = var.virtual_machine_subnet_name
@@ -52,4 +65,22 @@ resource "azurerm_subnet" "main" {
   resource_group_name  = var.virtual_machine_resource_group_name
   virtual_network_name = var.virtual_machine_network_name
   address_prefixes     = [var.virtual_machine_subnet_address_prefix]
+}
+
+#
+# network security group
+#
+
+data "azurerm_network_security_group" "existing" {
+  count                = var.create_virtual_machine_subnet_network_security_group ? 0 : 1
+  name                 = var.virtual_machine_subnet_network_security_group_name
+  resource_group_name  = var.virtual_machine_resource_group_name
+}
+
+resource "azurerm_network_security_group" "main" {
+  count = var.create_virtual_machine_subnet_network_security_group ? 1 : 0
+
+  name                = var.virtual_machine_subnet_network_security_group_name
+  resource_group_name = var.virtual_machine_resource_group_name
+  location            = local.location
 }

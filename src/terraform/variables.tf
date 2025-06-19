@@ -68,3 +68,15 @@ variable "virtual_machine_subnet_address_prefix" {
     error_message = "The subnet address prefix must be a valid CIDR block."
   }
 }
+
+variable "create_virtual_machine_subnet_network_security_group" {
+  description = "Flag to create a network security group for the subnet"
+  type        = bool
+  default     = true
+}
+
+variable "virtual_machine_subnet_network_security_group_name" {
+  description = "Name of the network security group for the subnet"
+  type        = string
+  default     = "default-nsg"
+}
