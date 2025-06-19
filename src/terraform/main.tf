@@ -20,6 +20,11 @@ locals {
         one(data.azurerm_resource_group.existing[*].location),
         var.location
     )
+
+    virtual_machine_resource_group_name = coalesce(
+        one(azurerm_resource_group.main[*].name),  
+        one(data.azurerm_resource_group.existing[*].name) 
+  )   
 }
 
 #
@@ -29,7 +34,7 @@ locals {
 data "azurerm_virtual_network" "existing" {
   count               = var.create_virtual_machine_network ? 0 : 1
   name                = var.virtual_machine_network_name
-  resource_group_name = var.virtual_machine_resource_group_name
+  resource_group_name = local.virtual_machine_resource_group_name
 }
 
 resource "azurerm_virtual_network" "main" {
@@ -43,9 +48,16 @@ resource "azurerm_virtual_network" "main" {
   }
   
   name                = var.virtual_machine_network_name
-  resource_group_name = var.virtual_machine_resource_group_name
+  resource_group_name = local.virtual_machine_resource_group_name
   location            = local.location
   address_space       = var.virtual_machine_network_address_space
+}
+
+locals {
+    virtual_machine_network_name = coalesce(
+        one(azurerm_virtual_network.main[*].name),
+        one(data.azurerm_virtual_network.existing[*].name),
+    )
 }
 
 #
@@ -55,16 +67,16 @@ resource "azurerm_virtual_network" "main" {
 data "azurerm_subnet" "existing" {
   count                = var.create_virtual_machine_subnet ? 0 : 1
   name                 = var.virtual_machine_subnet_name
-  virtual_network_name = var.virtual_machine_network_name
-  resource_group_name  = var.virtual_machine_resource_group_name
+  virtual_network_name = local.virtual_machine_network_name
+  resource_group_name  = local.virtual_machine_resource_group_name
 }
 
 resource "azurerm_subnet" "main" {
   count = var.create_virtual_machine_subnet ? 1 : 0
   
   name                 = var.virtual_machine_subnet_name
-  resource_group_name  = var.virtual_machine_resource_group_name
-  virtual_network_name = var.virtual_machine_network_name
+  resource_group_name  = local.virtual_machine_resource_group_name
+  virtual_network_name = local.virtual_machine_network_name
   address_prefixes     = [var.virtual_machine_subnet_address_prefix]
 }
 
@@ -82,22 +94,29 @@ locals {
 data "azurerm_network_security_group" "existing" {
   count                = var.create_virtual_machine_subnet_network_security_group ? 0 : 1
   name                 = var.virtual_machine_subnet_network_security_group_name
-  resource_group_name  = var.virtual_machine_resource_group_name
+  resource_group_name  = local.virtual_machine_resource_group_name
 }
 
 resource "azurerm_network_security_group" "main" {
   count = var.create_virtual_machine_subnet_network_security_group ? 1 : 0
 
   name                = var.virtual_machine_subnet_network_security_group_name
-  resource_group_name = var.virtual_machine_resource_group_name
+  resource_group_name = local.virtual_machine_resource_group_name
   location            = local.location
+}
+
+locals {
+    network_security_group_id = coalesce(
+        one(azurerm_network_security_group.main[*].id),
+        one(data.azurerm_network_security_group.existing[*].id),
+    )
 }
 
 resource "azurerm_subnet_network_security_group_association" "main" {
   count = var.create_virtual_machine_subnet_network_security_group && var.create_virtual_machine_subnet ? 1 : 0
   
-  subnet_id                 = azurerm_subnet.main[0].id
-  network_security_group_id = azurerm_network_security_group.main[0].id
+  subnet_id                 = local.subnet_id
+  network_security_group_id = local.network_security_group_id
 }
 
 #
@@ -111,7 +130,7 @@ locals {
 resource "azurerm_network_interface" "main" {
   name                          = "${var.virtual_machine_name}-nic"
   location                      = local.location
-  resource_group_name           = var.virtual_machine_resource_group_name
+  resource_group_name           = local.virtual_machine_resource_group_name
 
   ip_configuration {
     name                          = "internal"
@@ -125,7 +144,7 @@ resource "azurerm_managed_disk" "main" {
   
   name                 = "${var.virtual_machine_name}-data-disk"
   location             = local.location
-  resource_group_name  = var.virtual_machine_resource_group_name
+  resource_group_name  = local.virtual_machine_resource_group_name
   storage_account_type = var.data_disk_type
   create_option        = "Empty"
   disk_size_gb         = var.data_disk_size_gb
@@ -134,7 +153,7 @@ resource "azurerm_managed_disk" "main" {
 resource "azurerm_linux_virtual_machine" "main" {
   name                = var.virtual_machine_name
   location            = local.location
-  resource_group_name = var.virtual_machine_resource_group_name
+  resource_group_name = local.virtual_machine_resource_group_name
   size                = var.virtual_machine_size
   admin_username      = var.admin_username
   admin_password      = var.authentication_type == "Password" ? var.admin_password : null
