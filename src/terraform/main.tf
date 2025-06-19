@@ -9,7 +9,7 @@ data "azurerm_resource_group" "existing" {
 
 resource "azurerm_resource_group" "main" {
   count    = var.create_virtual_machine_resource_group ? 1 : 0
-  
+
   name     = var.virtual_machine_resource_group_name
   location = var.location
 }
@@ -18,6 +18,7 @@ locals {
     location = coalesce(
         one(azurerm_resource_group.main[*].location),
         one(data.azurerm_resource_group.existing[*].location),
+        var.location
     )
 }
 
@@ -67,6 +68,13 @@ resource "azurerm_subnet" "main" {
   address_prefixes     = [var.virtual_machine_subnet_address_prefix]
 }
 
+locals {
+    subnet_id = coalesce(
+        one(azurerm_subnet.main[*].id),
+        one(data.azurerm_subnet.existing[*].id),
+    )
+}
+
 #
 # network security group
 #
@@ -83,4 +91,101 @@ resource "azurerm_network_security_group" "main" {
   name                = var.virtual_machine_subnet_network_security_group_name
   resource_group_name = var.virtual_machine_resource_group_name
   location            = local.location
+}
+
+resource "azurerm_subnet_network_security_group_association" "main" {
+  count = var.create_virtual_machine_subnet_network_security_group && var.create_virtual_machine_subnet ? 1 : 0
+  
+  subnet_id                 = azurerm_subnet.main[0].id
+  network_security_group_id = azurerm_network_security_group.main[0].id
+}
+
+#
+# virtual machine
+#
+
+locals {
+  is_gpu_enabled = can(regex("^Standard_N[CDGV]", var.virtual_machine_size))  
+}
+
+resource "azurerm_network_interface" "main" {
+  name                          = "${var.virtual_machine_name}-nic"
+  location                      = local.location
+  resource_group_name           = var.virtual_machine_resource_group_name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = local.subnet_id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_managed_disk" "main" {
+  count = var.create_data_disk ? 1 : 0
+  
+  name                 = "${var.virtual_machine_name}-data-disk"
+  location             = local.location
+  resource_group_name  = var.virtual_machine_resource_group_name
+  storage_account_type = var.data_disk_type
+  create_option        = "Empty"
+  disk_size_gb         = var.data_disk_size_gb
+}
+
+resource "azurerm_linux_virtual_machine" "main" {
+  name                = var.virtual_machine_name
+  location            = local.location
+  resource_group_name = var.virtual_machine_resource_group_name
+  size                = var.virtual_machine_size
+  admin_username      = var.admin_username
+  admin_password      = var.authentication_type == "Password" ? var.admin_password : null
+
+  disable_password_authentication = var.authentication_type == "SSH"
+
+  network_interface_ids = [
+    azurerm_network_interface.main.id,
+  ]
+
+  dynamic "admin_ssh_key" {
+    for_each = var.authentication_type == "SSH" && var.ssh_public_key != null ? [1] : []
+    content {
+      username   = var.admin_username
+      public_key = var.ssh_public_key
+    }
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = var.os_disk_type
+    disk_size_gb         = var.os_disk_size_gb
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
+  }
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "main" {
+  count = var.create_data_disk ? 1 : 0
+  
+  managed_disk_id    = azurerm_managed_disk.main[0].id
+  virtual_machine_id = azurerm_linux_virtual_machine.main.id
+  lun                = "1"
+  caching            = var.data_disk_caching
+}
+
+resource "azurerm_virtual_machine_extension" "nvidia_gpu_driver" {
+  count = local.is_gpu_enabled && var.install_gpu_drivers ? 1 : 0
+  
+  name                 = "${var.virtual_machine_name}-nvidia-gpu-driver"
+  virtual_machine_id   = azurerm_linux_virtual_machine.main.id
+  publisher            = "Microsoft.HpcCompute"
+  type                 = "NvidiaGpuDriverLinux"
+  type_handler_version = "1.9"
+  
+  settings = jsonencode({
+    "DriverType" = var.gpu_driver_type
+  })
 }
