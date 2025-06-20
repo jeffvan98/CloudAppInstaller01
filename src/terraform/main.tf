@@ -120,6 +120,36 @@ resource "azurerm_subnet_network_security_group_association" "main" {
 }
 
 #
+# route table
+#
+
+resource "azurerm_route_table" "main" {
+  count = var.create_route_table ? 1 : 0
+  
+  name                          = var.route_table_name
+  location                      = local.location
+  resource_group_name           = local.virtual_machine_resource_group_name
+  bgp_route_propagation_enabled = var.bgp_route_propagation_enabled
+
+  dynamic "route" {
+    for_each = var.custom_routes
+    content {
+      name                   = route.value.name
+      address_prefix         = route.value.address_prefix
+      next_hop_type          = route.value.next_hop_type
+      next_hop_in_ip_address = route.value.next_hop_in_ip_address
+    }
+  }
+}
+
+resource "azurerm_subnet_route_table_association" "main" {
+  count = var.create_route_table && var.create_virtual_machine_subnet ? 1 : 0
+  
+  subnet_id      = azurerm_subnet.main[0].id
+  route_table_id = azurerm_route_table.main[0].id
+}
+
+#
 # virtual machine
 #
 
