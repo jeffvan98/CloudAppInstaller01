@@ -102,6 +102,47 @@ variable "virtual_machine_subnet_network_security_group_name" {
 }
 
 #
+# route table
+#
+
+variable "create_route_table" {
+  description = "Create a User-Defined Route (UDR) table for the subnet"
+  type        = bool
+  default     = false
+}
+
+variable "route_table_name" {
+  description = "Name of the route table"
+  type        = string
+  default     = "default-rt"
+}
+
+variable "custom_routes" {
+  description = "List of custom routes to add to the route table"
+  type = list(object({
+    name                   = string
+    address_prefix         = string
+    next_hop_type          = string
+    next_hop_in_ip_address = optional(string)
+  }))
+  default = []
+  
+  validation {
+    condition = alltrue([
+      for route in var.custom_routes : 
+      contains(["VirtualNetworkGateway", "VnetLocal", "Internet", "VirtualAppliance", "None"], route.next_hop_type)
+    ])
+    error_message = "next_hop_type must be one of: VirtualNetworkGateway, VnetLocal, Internet, VirtualAppliance, None"
+  }
+}
+
+variable "bgp_route_propagation_enabled" {
+  description = "Enable BGP route propagation on the route table"
+  type        = bool
+  default     = true
+}
+
+#
 # virtual machine
 #
 
