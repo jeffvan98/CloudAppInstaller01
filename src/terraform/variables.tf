@@ -275,3 +275,183 @@ variable "gpu_driver_type" {
     error_message = "GPU driver type must be either 'CUDA' (for compute) or 'GRID' (for graphics)."
   }
 }
+
+#
+# azure files share configuration (optional)
+#
+
+variable "create_azure_files_share" {
+  description = "Create and configure an Azure Files share with private endpoint"
+  type        = bool
+  default     = false
+}
+
+#
+# files - subnet
+#
+
+variable "create_private_endpoint_subnet" {
+  description = "Create a new subnet for private endpoints (only used if create_azure_files_share is true)"
+  type        = bool
+  default     = true
+}
+
+variable "private_endpoint_virtual_network_name" {
+  description = "Name of the virtual network that contains or will contain the private endpoint subnet"
+  type        = string
+  default     = ""  # Will default to main VNet if empty
+}
+
+variable "private_endpoint_subnet_name" {
+  description = "Name of the subnet for private endpoints (new or existing)"
+  type        = string
+  default     = "private-endpoint-subnet"
+}
+
+variable "private_endpoint_subnet_address_prefix" {
+  description = "Address prefix for the private endpoint subnet (only used if creating new subnet)"
+  type        = string
+  default     = "10.0.2.0/24"
+}
+
+#
+# files - network security group
+#
+
+variable "create_private_endpoint_nsg" {
+  description = "Create a network security group for the private endpoint subnet"
+  type        = bool
+  default     = true
+}
+
+variable "private_endpoint_nsg_name" {
+  description = "Name of the NSG for the private endpoint subnet"
+  type        = string
+  default     = "private-endpoint-nsg"
+}
+
+#
+# files - storage account
+#
+
+variable "azure_files_storage_account_name" {
+  description = "Name of the storage account for Azure Files (leave empty for auto-generated)"
+  type        = string
+  default     = ""
+  
+  validation {
+    condition = var.azure_files_storage_account_name == "" || (
+      length(var.azure_files_storage_account_name) >= 3 && 
+      length(var.azure_files_storage_account_name) <= 24 &&
+      can(regex("^[a-z0-9]+$", var.azure_files_storage_account_name))
+    )
+    error_message = "Storage account name must be 3-24 characters, lowercase letters and numbers only."
+  }
+}
+
+variable "azure_files_storage_account_tier" {
+  description = "Performance tier of the storage account"
+  type        = string
+  default     = "Standard"
+  
+  validation {
+    condition = contains(["Standard", "Premium"], var.azure_files_storage_account_tier)
+    error_message = "Storage account tier must be Standard or Premium."
+  }
+}
+
+variable "azure_files_storage_account_replication" {
+  description = "Replication type for the storage account"
+  type        = string
+  default     = "LRS"
+  
+  validation {
+    condition = contains(["LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"], var.azure_files_storage_account_replication)
+    error_message = "Replication type must be one of: LRS, GRS, RAGRS, ZRS, GZRS, RAGZRS."
+  }
+}
+
+variable "azure_files_share_name" {
+  description = "Name of the Azure Files share"
+  type        = string
+  default     = "vmfileshare"
+  
+  validation {
+    condition = can(regex("^[a-z0-9-]{3,63}$", var.azure_files_share_name))
+    error_message = "File share name must be 3-63 characters, lowercase letters, numbers, and hyphens only."
+  }
+}
+
+variable "azure_files_share_quota_gb" {
+  description = "Quota for the Azure Files share in GB"
+  type        = number
+  default     = 100
+  
+  validation {
+    condition = var.azure_files_share_quota_gb >= 1 && var.azure_files_share_quota_gb <= 102400
+    error_message = "File share quota must be between 1 GB and 102,400 GB (100 TB)."
+  }
+}
+
+variable "azure_files_share_access_tier" {
+  description = "Access tier for the Azure Files share"
+  type        = string
+  default     = "TransactionOptimized"
+  
+  validation {
+    condition = contains(["TransactionOptimized", "Hot", "Cool"], var.azure_files_share_access_tier)
+    error_message = "Access tier must be TransactionOptimized, Hot, or Cool."
+  }
+}
+
+#
+# files - rbac
+#
+
+variable "azure_files_vm_rbac_roles" {
+  description = "RBAC roles to assign to the VM for Azure Files access"
+  type        = list(string)
+  default     = [
+    "Storage File Data SMB Share Contributor"
+  ]
+  
+  validation {
+    condition = alltrue([
+      for role in var.azure_files_vm_rbac_roles :
+      contains([
+        "Storage File Data SMB Share Reader",
+        "Storage File Data SMB Share Contributor", 
+        "Storage File Data SMB Share Elevated Contributor"
+      ], role)
+    ])
+    error_message = "RBAC roles must be valid Azure Files SMB share roles."
+  }
+}
+
+#
+# files - private dns
+#
+
+variable "create_private_dns_zone_for_files" {
+  description = "Create a private DNS zone for Azure Files private endpoint"
+  type        = bool
+  default     = true
+}
+
+variable "private_dns_zone_name_for_files" {
+  description = "Name of the private DNS zone for Azure Files"
+  type        = string
+  default     = "privatelink.file.core.windows.net"
+}
+
+variable "private_dns_zone_target_vnets" {
+  description = "List of virtual network IDs to link to the private DNS zone"
+  type        = list(string)
+  default     = []  # Will default to main VNet if empty
+}
+
+variable "private_dns_zone_registration_enabled" {
+  description = "Enable auto-registration in the private DNS zone"
+  type        = bool
+  default     = false
+}

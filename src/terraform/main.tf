@@ -214,6 +214,10 @@ resource "azurerm_linux_virtual_machine" "main" {
     sku       = "server"
     version   = "latest"
   }
+
+  identity {
+    type = "SystemAssigned" 
+  }
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "main" {

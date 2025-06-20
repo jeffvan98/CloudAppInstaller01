@@ -1,0 +1,73 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.9 Chrome/134.0.6998.205 Electron/35.4.0 Safari/537.36" version="27.0.9">
+  <diagram name="Page-1" id="x_zYZ5JNltQ4zRW5rkLh">
+    <mxGraphModel dx="1426" dy="841" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-1" value="Virtual Network&amp;nbsp;&lt;div&gt;(new or existing)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;verticalAlign=top;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="240" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-2" value="Virtual Machine Subnet&amp;nbsp;&lt;div&gt;(new or existing)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;verticalAlign=top;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="200" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-3" value="Private Endpoint Subnet&amp;nbsp;&lt;div&gt;(optional; new or existing)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;verticalAlign=top;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="200" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-4" target="YOqYQ2-5gPJCRtPFh1Bi-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-4" value="Route Table (optional)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="220" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-5" target="YOqYQ2-5gPJCRtPFh1Bi-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-5" value="Network Security Group (optional)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="160" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-6" target="YOqYQ2-5gPJCRtPFh1Bi-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-6" value="Virtual Machine&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="280" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-9" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="175" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-10" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="235" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-11" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="295" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-15" target="YOqYQ2-5gPJCRtPFh1Bi-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-15" value="Files (optional)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="480" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-16" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="495" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-18" target="YOqYQ2-5gPJCRtPFh1Bi-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-18" value="Private DNS Zone (optional)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="560" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-19" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="575" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;startFill=0;" edge="1" parent="1" source="YOqYQ2-5gPJCRtPFh1Bi-22" target="YOqYQ2-5gPJCRtPFh1Bi-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-22" value="Network Security Group (optional)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="300" y="420" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="YOqYQ2-5gPJCRtPFh1Bi-23" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="155" y="435" width="10" height="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
