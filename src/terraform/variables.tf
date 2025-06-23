@@ -408,24 +408,10 @@ variable "azure_files_share_access_tier" {
 # files - rbac
 #
 
-variable "azure_files_vm_rbac_roles" {
-  description = "RBAC roles to assign to the VM for Azure Files access"
-  type        = list(string)
-  default     = [
-    "Storage File Data SMB Share Contributor"
-  ]
-  
-  validation {
-    condition = alltrue([
-      for role in var.azure_files_vm_rbac_roles :
-      contains([
-        "Storage File Data SMB Share Reader",
-        "Storage File Data SMB Share Contributor", 
-        "Storage File Data SMB Share Elevated Contributor"
-      ], role)
-    ])
-    error_message = "RBAC roles must be valid Azure Files SMB share roles."
-  }
+variable "grant_vm_storage_access" {
+  description = "Grant the VM managed identity access to read storage account keys"
+  type        = bool
+  default     = true
 }
 
 #
@@ -454,4 +440,37 @@ variable "private_dns_zone_registration_enabled" {
   description = "Enable auto-registration in the private DNS zone"
   type        = bool
   default     = false
+}
+
+#
+# mount files on vm
+#
+
+variable "mount_azure_files_on_vm" {
+  description = "Mount the Azure Files share on the VM (requires create_azure_files_share to be true)"
+  type        = bool
+  default     = true
+}
+
+variable "azure_files_mount_point" {
+  description = "Mount point path on the VM for Azure Files share"
+  type        = string
+  default     = "/mnt/azurefiles"
+  
+  validation {
+    condition = can(regex("^/", var.azure_files_mount_point))
+    error_message = "Mount point must be an absolute path starting with '/'."
+  }
+}
+
+variable "azure_files_mount_options" {
+  description = "Mount options for Azure Files share"
+  type        = string
+  default     = "nofail,credentials=/etc/azure-files-credentials,dir_mode=0755,file_mode=0644,serverino"
+}
+
+variable "azure_files_mount_persistent" {
+  description = "Add mount to /etc/fstab for persistent mounting across reboots"
+  type        = bool
+  default     = true
 }

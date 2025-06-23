@@ -417,11 +417,11 @@ resource "azurerm_private_endpoint" "azure_files" {
 # rbac
 #
 
-resource "azurerm_role_assignment" "vm_azure_files" {
-  count = var.create_azure_files_share ? length(var.azure_files_vm_rbac_roles) : 0
+resource "azurerm_role_assignment" "vm_storage_key_operator" {
+  count = var.create_azure_files_share && var.grant_vm_storage_access ? 1 : 0
   
   scope                = azurerm_storage_account.azure_files[0].id
-  role_definition_name = var.azure_files_vm_rbac_roles[count.index]
+  role_definition_name = "Storage Account Key Operator Service Role"
   principal_id         = azurerm_linux_virtual_machine.main.identity[0].principal_id
   
   depends_on = [
@@ -429,4 +429,52 @@ resource "azurerm_role_assignment" "vm_azure_files" {
   ]
 }
 
-# TODO - mount the share on the VM
+#
+# cli
+#
+
+resource "azurerm_virtual_machine_extension" "azure_cli" {
+  count = var.create_azure_files_share && var.mount_azure_files_on_vm ? 1 : 0
+  
+  name                 = "${var.virtual_machine_name}-install-azure-cli"
+  virtual_machine_id   = azurerm_linux_virtual_machine.main.id
+  publisher            = "Microsoft.Azure.Extensions"
+  type                 = "CustomScript"
+  type_handler_version = "2.1"
+  
+  settings = jsonencode({
+    "commandToExecute" = "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+  })
+
+}
+
+#
+# mount
+#
+
+resource "azurerm_virtual_machine_extension" "mount_azure_files" {
+  count = var.create_azure_files_share && var.mount_azure_files_on_vm ? 1 : 0
+  
+  name                 = "${var.virtual_machine_name}-mount-azure-files"
+  virtual_machine_id   = azurerm_linux_virtual_machine.main.id
+  publisher            = "Microsoft.Azure.Extensions"
+  type                 = "CustomScript"
+  type_handler_version = "2.1"
+  
+  settings = jsonencode({
+    "script" = base64encode(templatefile("${path.module}/scripts/mount-azure-files.sh", {
+      storage_account_name = azurerm_storage_account.azure_files[0].name
+      share_name          = azurerm_storage_share.main[0].name
+      mount_point         = var.azure_files_mount_point
+      mount_options       = var.azure_files_mount_options
+      make_persistent     = var.azure_files_mount_persistent
+    }))
+  })
+  
+  depends_on = [
+    azurerm_storage_share.main,
+    azurerm_private_endpoint.azure_files,
+    azurerm_role_assignment.vm_storage_key_operator, 
+    azurerm_virtual_machine_extension.azure_cli
+  ]
+}
