@@ -428,3 +428,5 @@ resource "azurerm_role_assignment" "vm_azure_files" {
     azurerm_linux_virtual_machine.main
   ]
 }
+
+# TODO - mount the share on the VM
