@@ -58,6 +58,11 @@ locals {
         one(azurerm_virtual_network.main[*].name),
         one(data.azurerm_virtual_network.existing[*].name),
     )
+
+    virtual_machine_network_id = coalesce(
+        one(azurerm_virtual_network.main[*].id),
+        one(data.azurerm_virtual_network.existing[*].id),
+    )
 }
 
 #
@@ -279,7 +284,14 @@ resource "azurerm_subnet" "private_endpoint" {
   address_prefixes     = [var.private_endpoint_subnet_address_prefix]
   
   # Required for private endpoints
-  private_endpoint_network_policies = "Disabled"
+  private_endpoint_network_policies = "Disabled" 
+
+  lifecycle {
+    precondition {
+      condition     = local.subnet_id != null
+      error_message = "Main subnet must be available before creating private endpoint subnet."
+    }
+  }
 }
 
 data "azurerm_subnet" "private_endpoint_existing" {
@@ -330,8 +342,8 @@ resource "azurerm_storage_account" "azure_files" {
   account_tier             = var.azure_files_storage_account_tier
   account_replication_type = var.azure_files_storage_account_replication
   
-  # Required for private endpoints
-  public_network_access_enabled = false
+  # Start with public access enabled for Terraform operations
+  public_network_access_enabled = true
   
   # Enable large file shares if using Standard tier
   large_file_share_enabled = var.azure_files_storage_account_tier == "Standard" ? true : null
@@ -348,6 +360,10 @@ resource "azurerm_storage_share" "main" {
   storage_account_name = azurerm_storage_account.azure_files[0].name
   quota                = var.azure_files_share_quota_gb
   access_tier          = var.azure_files_share_access_tier
+
+  depends_on = [ 
+    azurerm_storage_account.azure_files
+   ]
 }
 
 #
@@ -359,12 +375,6 @@ resource "azurerm_private_dns_zone" "azure_files" {
   
   name                = var.private_dns_zone_name_for_files
   resource_group_name = local.virtual_machine_resource_group_name
-
-  tags = {
-    Environment = "Development"
-    Project     = "CloudAppInstaller"
-    ManagedBy   = "Terraform"
-  }
 }
 
 #
@@ -377,11 +387,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "azure_files" {
   name                  = "${local.private_endpoint_vnet_name}-files-link"
   resource_group_name   = local.virtual_machine_resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.azure_files[0].name
-  virtual_network_id = coalesce(
-    one(azurerm_virtual_network.main[*].id),
-    one(data.azurerm_virtual_network.existing[*].id)
-  )
-  registration_enabled  = var.private_dns_zone_registration_enabled
+  virtual_network_id    = local.virtual_machine_network_id
+  registration_enabled  = false
 }
 
 #
@@ -414,6 +421,25 @@ resource "azurerm_private_endpoint" "azure_files" {
 }
 
 #
+# lock storage account after configuration
+#
+
+resource "azurerm_storage_account_network_rules" "azure_files_lockdown" {
+  count = var.create_azure_files_share ? 1 : 0
+  
+  storage_account_id = azurerm_storage_account.azure_files[0].id
+  
+  # Disable public access completely
+  default_action = "Deny"
+  bypass = ["Metrics", "Logging", "AzureServices"]
+
+  # Wait until private endpoint is fully configured
+  depends_on = [
+    azurerm_private_endpoint.azure_files
+  ]
+}
+
+#
 # rbac
 #
 
@@ -430,27 +456,15 @@ resource "azurerm_role_assignment" "vm_storage_key_operator" {
 }
 
 #
-# cli
-#
-
-resource "azurerm_virtual_machine_extension" "azure_cli" {
-  count = var.create_azure_files_share && var.mount_azure_files_on_vm ? 1 : 0
-  
-  name                 = "${var.virtual_machine_name}-install-azure-cli"
-  virtual_machine_id   = azurerm_linux_virtual_machine.main.id
-  publisher            = "Microsoft.Azure.Extensions"
-  type                 = "CustomScript"
-  type_handler_version = "2.1"
-  
-  settings = jsonencode({
-    "commandToExecute" = "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
-  })
-
-}
-
-#
 # mount
 #
+
+resource "time_sleep" "rbac_propagation" {
+  count = var.create_azure_files_share && var.mount_azure_files_on_vm && var.grant_vm_storage_access ? 1 : 0
+  
+  depends_on = [azurerm_role_assignment.vm_storage_key_operator]
+  create_duration = "120s"  # 2 minutes for RBAC propagation
+}
 
 resource "azurerm_virtual_machine_extension" "mount_azure_files" {
   count = var.create_azure_files_share && var.mount_azure_files_on_vm ? 1 : 0
@@ -474,7 +488,7 @@ resource "azurerm_virtual_machine_extension" "mount_azure_files" {
   depends_on = [
     azurerm_storage_share.main,
     azurerm_private_endpoint.azure_files,
-    azurerm_role_assignment.vm_storage_key_operator, 
-    azurerm_virtual_machine_extension.azure_cli
+    azurerm_role_assignment.vm_storage_key_operator,
+    time_sleep.rbac_propagation
   ]
 }

@@ -71,13 +71,13 @@ variable "create_virtual_machine_subnet" {
 variable "virtual_machine_subnet_name" {
   description = "Name of the subnet"
   type        = string
-  default     = "default-subnet"  
+  default     = "infrastructure-subnet"  
 }
 
 variable "virtual_machine_subnet_address_prefix" {
   description = "Address prefix for the subnet"
   type        = string
-  default     = "10.0.1.0/24"
+  default     = "10.0.2.0/24"
 
   validation {
     condition = can(cidrhost(var.virtual_machine_subnet_address_prefix, 0))
@@ -98,7 +98,7 @@ variable "create_virtual_machine_subnet_network_security_group" {
 variable "virtual_machine_subnet_network_security_group_name" {
   description = "Name of the network security group for the subnet"
   type        = string
-  default     = "default-nsg"
+  default     = "infrastructure-nsg"
 }
 
 #
@@ -428,18 +428,6 @@ variable "private_dns_zone_name_for_files" {
   description = "Name of the private DNS zone for Azure Files"
   type        = string
   default     = "privatelink.file.core.windows.net"
-}
-
-variable "private_dns_zone_target_vnets" {
-  description = "List of virtual network IDs to link to the private DNS zone"
-  type        = list(string)
-  default     = []  # Will default to main VNet if empty
-}
-
-variable "private_dns_zone_registration_enabled" {
-  description = "Enable auto-registration in the private DNS zone"
-  type        = bool
-  default     = false
 }
 
 #
